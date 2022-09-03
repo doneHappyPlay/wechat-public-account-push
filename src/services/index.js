@@ -21,6 +21,7 @@ export const getAccessToken = async () => {
   try {
     const res = await axios.get(postUrl).catch(err => err)
     if (res.status === 200 && res.data && res.data.access_token) {
+      console.log('accessToken',res.data)
       accessToken = res.data.access_token
     } else {
       console.error('获取 accessToken: 请求失败', res.data.errmsg)
