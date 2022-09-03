@@ -7,13 +7,13 @@ export const config = {
     APP_ID: "wx304c5be153c15298",
 
     // 公众号APP_SECRET
-    APP_SECRET: "bc59752bcb526895a8f7d915f94e22b1",
+    APP_SECRET: "3dfde84407fa8d1fde0fbc956e61e181",
 
     // 模板消息id
-    TEMPLATE_ID: "IQBCKQzSEfsQqGUY-Z380U5dTwnjNifOvtxBCg1yvVA",
+    TEMPLATE_ID: "37Hm6ia3_vHzDhOBVrqLr_wAQ4z7-N4CONjBlbM6m2M",
 
     // 回调消息模板id, 用来看自己有没有发送成功的那个模板
-    CALLBACK_TEMPLATE_ID: "37Hm6ia3_vHzDhOBVrqLr_wAQ4z7-N4CONjBlbM6m2M",
+    CALLBACK_TEMPLATE_ID: "IQBCKQzSEfsQqGUY-Z380U5dTwnjNifOvtxBCg1yvVA",
 
     // 接收公众号消息的微信号，如果有多个，需要在[]里用英文逗号间隔，例如
     // [{
