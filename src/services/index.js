@@ -19,7 +19,7 @@ export const getAccessToken = async () => {
   const postUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`
 
   try {
-    const res = await axios.get(postUrl).catch(err => err)
+    const res = await axios.get(postUrl)
     if (res.status === 200 && res.data && res.data.access_token) {
       accessToken = res.data.access_token
     } else {
@@ -78,7 +78,7 @@ export const getWeather = async (province, city) => {
 
 /**
  * 金山词霸每日一句
- * @returns 
+ * @returns
  */
 export const getCIBA = async () => {
   const url = 'http://open.iciba.com/dsapi/'
@@ -98,8 +98,8 @@ export const getCIBA = async () => {
 
 /**
  * 每日一言
- * @param {*} type 
- * @returns 
+ * @param {*} type
+ * @returns
  */
 export const getOneTalk = async (type) => {
 
@@ -109,7 +109,7 @@ export const getOneTalk = async (type) => {
 
   const res = await axios.get(url).catch(err => err)
 
-  if (res.status === 200 && res) {
+  if (res && res.status === 200) {
     return res.data
   }
 
@@ -119,8 +119,25 @@ export const getOneTalk = async (type) => {
 }
 
 /**
+ * 土味情话
+ * @returns {String} 土味情话内容
+ */
+export const getEarthyLoveWords = async () => {
+  const url = 'https://api.shadiao.pro/chp'
+  try {
+    const res = await axios.get(url, {
+      responseType: 'json'
+    });
+    return res.data && res.data.data && res.data.data.text || ''
+  } catch (e) {
+    console.error('土味情话：发生错误', e)
+    return ''
+  }
+}
+
+/**
  * 获取重要节日信息
- * @returns 
+ * @returns
  */
 export const getBirthdayMessage = () => {
   // 计算重要节日倒数
@@ -130,7 +147,7 @@ export const getBirthdayMessage = () => {
 
   birthdayList.forEach((item, index) => {
     if (
-      ! config.FESTIVALS_LIMIT ||
+      !config.FESTIVALS_LIMIT ||
       (config.FESTIVALS_LIMIT && index < config.FESTIVALS_LIMIT)
       ) {
       let message = null
@@ -139,7 +156,7 @@ export const getBirthdayMessage = () => {
       if (item.type === '生日') {
         // 获取周岁
         const age = dayjs().diff(item.year + '-' + item.date, 'year');
-  
+
         if (item.diffDay === 0) {
           message = `今天是 ${item.name} 的${age ? age + '岁' : ''}生日哦，祝${item.name}生日快乐！`
         } else {
@@ -169,12 +186,42 @@ export const getBirthdayMessage = () => {
 }
 
 /**
+ * 计算每个重要日子的日期差
+ * @returns
+ */
+export const getDateDiffList = () => {
+  const dateList = config.CUSTOMIZED_DATE_LIST
+
+  dateList.forEach(item => {
+    item['diffDay'] = Math.floor(dayjs().diff(dayjs(item.date), 'day', true))
+  })
+
+  return dateList
+}
+
+export const getSlotList = () => {
+  const slotList = config.SLOT_LIST
+
+  slotList.forEach(item => {
+    if (Object.prototype.toString.call(item.contents) === '[object Array]' && item.contents.length > 0) {
+      item['checkout'] = item.contents[Math.floor(Math.random() * item.contents.length + 1) - 1]
+    } else if (Object.prototype.toString.call(item.contents) === '[object String]') {
+      item['checkout'] = item.contents
+    } else {
+      item['checkout'] = ''
+    }
+  })
+
+  return slotList
+}
+
+/**
  * 发送消息模板
- * @param {*} templateId 
- * @param {*} user 
- * @param {*} accessToken 
- * @param {*} params 
- * @returns 
+ * @param {*} templateId
+ * @param {*} user
+ * @param {*} accessToken
+ * @param {*} params
+ * @returns
  */
 export const sendMessage = async (templateId, user, accessToken, params) => {
   const url = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${accessToken}`
@@ -190,8 +237,8 @@ export const sendMessage = async (templateId, user, accessToken, params) => {
   // 组装数据
   const data = {
     "touser": user.id,
-    "template_id": templateId,
-    "url": "http://weixin.qq.com/download",
+    "template_id": user.useTemplateId || templateId,
+    "url": user.openUrl || "https://wangxinleo.cn",
     "topcolor": "#FF0000",
     "data": wxTemplateData
   }
@@ -223,28 +270,28 @@ export const sendMessage = async (templateId, user, accessToken, params) => {
 
 /**
  * 推送消息, 进行成功失败统计
- * @param {*} templateId 
- * @param {*} users 
- * @param {*} accessToken 
- * @param {*} params 
- * @returns 
+ * @param {*} templateId
+ * @param {*} users
+ * @param {*} accessToken
+ * @param {*} params
+ * @returns
  */
 export const sendMessageReply = async (templateId, users, accessToken, params) => {
-  const allPormise = []
+  const allPromise = []
   const needPostNum = users.length
   let successPostNum = 0
   let failPostNum = 0
   const successPostIds = []
   const failPostIds = []
   users.forEach(async user => {
-    allPormise.push(sendMessage(
+    allPromise.push(sendMessage(
       templateId,
       user,
       accessToken,
       params
     ))
   })
-  const resList = await Promise.all(allPormise)
+  const resList = await Promise.all(allPromise)
   resList.forEach(item => {
     if (item.success) {
       successPostNum ++
@@ -266,11 +313,12 @@ export const sendMessageReply = async (templateId, users, accessToken, params) =
 
 /**
  * 推送回执
- * @param {*} templateId 
- * @param {*} users 
- * @param {*} accessToken 
- * @param {*} params 
+ * @param {*} templateId
+ * @param {*} users
+ * @param {*} accessToken
+ * @param {*} params
  */
+/* istanbul ignore next */
 export const callbackReply = async (templateId, users, accessToken, params) => {
   users.forEach(async user => {
     await sendMessage(

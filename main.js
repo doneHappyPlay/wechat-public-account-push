@@ -1,14 +1,23 @@
 import dayjs from 'dayjs'
 import { selfDayjs, timeZone } from './src/utils/set-def-dayjs.js'
-import { getAccessToken, getWeather,getCIBA,
-    getOneTalk, getBirthdayMessage, sendMessageReply,
-    callbackReply } from './src/services/index.js'
+import { 
+    getAccessToken, 
+    getWeather,
+    getCIBA,
+    getOneTalk, 
+    getEarthyLoveWords,
+    getBirthdayMessage, 
+    sendMessageReply,
+    callbackReply, 
+    getDateDiffList,
+    getSlotList
+} from './src/services/index.js'
 import { config } from './config/index.js'
 import { toLowerLine, getColor } from './src/utils/index.js'
 
 const main = async () => {
     // 获取accessToken
-    const accessToken =  await getAccessToken()
+    const accessToken = await getAccessToken()
     // 接收的用户
     const users = config.USERS
     // 省份和市
@@ -31,10 +40,18 @@ const main = async () => {
     const { content: noteEn, note: noteCh} = await getCIBA()
     // 获取每日一言
     const { hitokoto: oneTalk, from: talkFrom} = await getOneTalk(config.LITERARY_PREFERENCE)
-    // 获取在一起的日期差
-    const loveDay = Math.ceil(dayjs().diff(dayjs(config.LOVE_DATE), 'day', true))
-    // 获取结婚的日期差
-    const marryDay = Math.ceil(dayjs().diff(dayjs(config.MARRY_DATE), 'day', true))
+    // 获取土味情话
+    const earthyLoveWords = await getEarthyLoveWords()
+    // 统计日列表计算日期差
+    const dateDiffParams = getDateDiffList().map(item => {
+        return { name: item.keyword, value: item.diffDay, color: getColor() }
+    })
+
+    // 获取插槽中的数据
+    const slotParams = getSlotList().map(item => {
+        return { name: item.keyword, value: item.checkout, color: getColor() }
+    })
+
     // 获取生日信息
     const birthdayMessage = getBirthdayMessage()
 
@@ -50,14 +67,13 @@ const main = async () => {
         { name: toLowerLine('maxTemperature'), value: maxTemperature, color: getColor() },
         { name: toLowerLine('windDirection'), value: windDirection, color: getColor() },
         { name: toLowerLine('windScale'), value: windScale, color: getColor() },
-        { name: toLowerLine('loveDay'), value: loveDay, color: getColor() },
-        { name: toLowerLine('marryDay'), value: marryDay, color: getColor() },
         { name: toLowerLine('birthdayMessage'), value: birthdayMessage, color: getColor() },
         { name: toLowerLine('noteEn'), value: noteEn, color: getColor() },
         { name: toLowerLine('noteCh'), value: noteCh, color: getColor() },
         { name: toLowerLine('oneTalk'), value: oneTalk, color: getColor() },
         { name: toLowerLine('talkFrom'), value: talkFrom, color: getColor() },
-    ]
+        { name: toLowerLine('earthyLoveWords'), value: earthyLoveWords, color: getColor() },
+    ].concat(dateDiffParams.concat(slotParams))
 
     // 公众号推送消息
     const sendMessageTemplateId = config.TEMPLATE_ID
@@ -83,7 +99,10 @@ const main = async () => {
     ].concat(wxTemplateParams)
     console.log(callbackTemplateParams,'callbackTemplateParams')
     const callbackTemplateId = config.CALLBACK_TEMPLATE_ID
-    await callbackReply(callbackTemplateId, config.CALLBACK_USERS, accessToken, callbackTemplateParams)
+    if (callbackTemplateId) {
+        await callbackReply(callbackTemplateId, config.CALLBACK_USERS, accessToken, callbackTemplateParams)
+    }
+
 
 }
 
