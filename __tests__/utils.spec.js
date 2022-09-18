@@ -1,8 +1,11 @@
-import { toLowerLine, getColor, randomNum, sortBirthdayTime } from '../src/utils'
+import { toLowerLine, getColor, randomNum, sortBirthdayTime, getConstellation } from '../src/utils'
 import MockDate from 'mockdate'
+import { config } from '../config'
+import { jest } from '@jest/globals'
+jest.mock('../config')
 
 describe('utils', () => {
-    test.concurrent.each([
+    test.each([
         ['date', 'date'],
         ['minTemperature', 'min_temperature'],
         ['earthyLoveWords', 'earthy_love_words'],
@@ -11,11 +14,14 @@ describe('utils', () => {
         expect(toLowerLine(src)).toEqual(expected)
     })
 
-    test.concurrent('getColor', () => {
+    test('getColor', () => {
+        config.IS_SHOW_COLOR = false
+        expect(getColor()).toBeUndefined()
+        config.IS_SHOW_COLOR = true
         expect(getColor()).toMatch(/#[\dA-Fa-f]{6}/)
     })
 
-    test.concurrent.each([
+    test.each([
         [1, 5],
         [10, 20],
         [50, 80]
@@ -25,7 +31,7 @@ describe('utils', () => {
         expect(random).toBeLessThanOrEqual(max)
     })
 
-    test.concurrent('sortBirthdayTime', () => {
+    test('sortBirthdayTime', () => {
         MockDate.set('2022-02-09')
         expect(sortBirthdayTime([
             {
@@ -49,5 +55,9 @@ describe('utils', () => {
             }
         ])
         MockDate.reset()
+    })
+    test('getConstellation', () => {
+        expect(getConstellation('09-22')).toEqual({cn: '处女', en: 'virgo'})
+        expect(getConstellation('09-23')).toEqual({cn: '天秤', en: 'libra'})
     })
 })
